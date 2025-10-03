@@ -1,4 +1,5 @@
-Guilded to Discord Migrator
+# Guilded to Discord Migrator
+Migrate your Guilded server (channels, roles, categories) to Discord.
 
 A tool desgined to help you migrate your Guilded server to Discord, preserving your server structure including categories, channels, and roles.
 
