@@ -68,4 +68,25 @@ Click "Start Discord Bot"
 
 In your Discord server, type !migrate setup
 
+How to build?
+
+Open Command Prompt (or PowerShell).
+
+Clone the repository:
+
+git clone https://github.com/PradaShades/GuildedDiscordMigrator.git
+cd GuildedDiscordMigrator
+
+Restore dependencies:
+
+dotnet restore
+
+Build the project:
+
+dotnet build -c Release
+
+The compiled executable will be in:
+
+bin/Release/net8.0-windows/
+
 Made with ❤ to help communities transition, during these dark times.
