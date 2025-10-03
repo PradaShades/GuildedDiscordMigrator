@@ -74,7 +74,7 @@ Open Command Prompt (or PowerShell).
 
 Clone the repository:
 
-git clone https://github.com/PradaShades/GuildedDiscordMigrator.git
+git clone https://github.com/PradaShades/Guilded-to-Discord-Migrator.git
 cd GuildedDiscordMigrator
 
 Restore dependencies:
