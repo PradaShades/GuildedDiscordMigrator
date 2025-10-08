@@ -64,4 +64,7 @@ This tool was created to help Guilded server owners:
 5. The compiled executable will be in:  
    `bin/Release/net8.0-windows/`
 
+   <img width="946" height="759" alt="guilded_image_6050b629464ad4139e86237f25e9c826" src="https://github.com/user-attachments/assets/74dc5900-d4b1-4269-a9aa-2d93f765d8be" />
+
+
 Made with ❤ to help communities transition, during these dark times.
