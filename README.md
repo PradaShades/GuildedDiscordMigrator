@@ -1,93 +1,67 @@
 # Guilded to Discord Migrator
+
 Migrate your Guilded server (channels, roles, categories) to Discord.
 
 A tool desgined to help you migrate your Guilded server to Discord, preserving your server structure including categories, channels, and roles.
 
-Why I made this tool?
+## Why I made this tool?
 
 Guilded is being shut down by Roblox. https://devforum.roblox.com/t/update-on-guilded-and-communities/3966775/14
 
 This tool was created to help Guilded server owners:
 
-Preserve their community structure during the transition
+- Preserve their community structure during the transition
+- Save hours of manual work recreating channels and categories
 
-Save hours of manual work recreating channels and categories
+## Features
 
-Features:
+- Extract Guilded Server Data: Pulls categories, channels, and roles from your Guilded server
+- Recreate Structure in Discord: Automatically recreates the entire server structure in Discord
+- Role Migration: Transfers role names and colors
+- Channel Organization: Maintains category channel relationships
+- User Friendly Interface: Simple Windows Forms application with progress tracking
+- Discord Bot: Easy setup with bot commands
 
-Extract Guilded Server Data: Pulls categories, channels, and roles from your Guilded server
+## How It Works?
 
-Recreate Structure in Discord: Automatically recreates the entire server structure in Discord
+- Extract: Uses your Guilded authentication cookie to extract server structure
+- Migrate: Uses a Discord bot to recreate everything in your Discord server
 
-Role Migration: Transfers role names and colors
+## How To
 
-Channel Organization: Maintains category channel relationships
+1. Log into Guilded in your browser
+2. Press F12 → Console tab → type `document.cookie` and copy the result
+3. Enable Developer Mode in Guilded settings
+4. Right click your server and "Copy Server ID"
 
-User Friendly Interface: Simple Windows Forms application with progress tracking
+### Create Discord Bot
 
-Discord Bot: Easy setup with bot commands
+1. Go to Discord Developer Portal https://discord.com/developers/applications
+2. Create new application → Bot tab
+3. Reset and copy bot token
+4. Enable Privileged Gateway Intents: Server Members Intent, Message Content Intent
+5. Invite bot to your server with Administrator permissions
 
-How It Works?
+### Run Migration.exe
 
-Extract: Uses your Guilded authentication cookie to extract server structure
+1. Launch the application
+2. Paste your Guilded cookie and server ID
+3. Click "Extract Guilded Server Data"
+4. Paste your Discord bot token
+5. Click "Start Discord Bot"
+6. In your Discord server, type `!migrate setup`
 
-Migrate: Uses a Discord bot to recreate everything in your Discord server
+## How to build?
 
-How To:
-
-Log into Guilded in your browser
-
-Press F12 → Console tab → type 'document.cookie' and copy the result
-
-Enable Developer Mode in Guilded settings
-
-Right click your server and "Copy Server ID"
-
-Create Discord Bot
-Go to Discord Developer Portal https://discord.com/developers/applications
-
-Create new application → Bot tab
-
-Reset and copy bot token
-
-Enable Privileged Gateway Intents:
-
-Server Members Intent Message Content Intent
-
-Invite bot to your server with Administrator permissions
-
-Run Migration.exe
-Launch the application
-
-Paste your Guilded cookie and server ID
-
-Click "Extract Guilded Server Data"
-
-Paste your Discord bot token
-
-Click "Start Discord Bot"
-
-In your Discord server, type !migrate setup
-
-How to build?
-
-Open Command Prompt (or PowerShell).
-
-Clone the repository:
-
-git clone https://github.com/PradaShades/Guilded-to-Discord-Migrator.git
-cd GuildedDiscordMigrator
-
-Restore dependencies:
-
-dotnet restore
-
-Build the project:
-
-dotnet build -c Release
-
-The compiled executable will be in:
-
-bin/Release/net8.0-windows/
+1. Open Command Prompt (or PowerShell)
+2. Clone the repository:  
+   `git clone https://github.com/PradaShades/Guilded-to-Discord-Migrator.git`  
+   `cd GuildedDiscordMigrator`
+3. Restore dependencies:  
+   `dotnet restore`
+4. Build the project:  
+   `dotnet build -c Release`
+5. The compiled executable will be in:  
+   `bin/Release/net8.0-windows/`
 
 Made with ❤ to help communities transition, during these dark times.
