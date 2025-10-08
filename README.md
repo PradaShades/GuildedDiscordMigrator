@@ -13,7 +13,7 @@ Preserve their community structure during the transition
 
 Save hours of manual work recreating channels and categories
 
-# Features:
+Features:
 
 Extract Guilded Server Data: Pulls categories, channels, and roles from your Guilded server
 
