@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Windows.Forms;
+using System.Text;
 
 namespace GuildedDiscordMigrator
 {
@@ -30,7 +31,6 @@ namespace GuildedDiscordMigrator
             _httpClient.DefaultRequestHeaders.Add("Origin", "https://www.guilded.gg");
             _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.guilded.gg/");
             
-   
             _httpClient.DefaultRequestHeaders.Add("Cookie", _guildedCookie);
         }
 
@@ -40,7 +40,6 @@ namespace GuildedDiscordMigrator
             {
                 progress?.Report("Starting Guilded server extraction...");
 
-                
                 progress?.Report("Testing authentication...");
                 var userInfo = await GetUserInfo();
                 if (userInfo == null)
@@ -52,7 +51,6 @@ namespace GuildedDiscordMigrator
 
                 progress?.Report($"✅ Authenticated as: {userInfo.Name}");
 
-           
                 progress?.Report("Fetching server information...");
                 var serverInfo = await GetServerInfoWithRoles(serverId);
                 if (serverInfo == null)
@@ -64,7 +62,6 @@ namespace GuildedDiscordMigrator
 
                 progress?.Report($"✅ Server found: {serverInfo.Team.Name}");
 
-               
                 progress?.Report("Fetching channels and categories...");
                 var fullChannelData = await GetFullChannelData(serverId);
                 
@@ -74,27 +71,35 @@ namespace GuildedDiscordMigrator
                     return null;
                 }
 
-               
-                var categories = fullChannelData.Categories.Select(c => new GuildedChannel
+                
+                var categories = new List<GuildedChannel>();
+                foreach (var category in fullChannelData.Categories)
                 {
-                    Id = c.Id.ToString(),
-                    Name = c.Name,
-                    Type = "category",
-                    Topic = "",
-                    ParentId = null,
-                    ChannelCategoryId = null
-                }).ToList();
+                    var sanitizedName = SanitizeUnicodeName(category.Name);
+                    categories.Add(new GuildedChannel
+                    {
+                        Id = category.Id.ToString(),
+                        Name = sanitizedName,
+                        Type = "category",
+                        Topic = "",
+                        ParentId = null,
+                        ChannelCategoryId = null
+                    });
+                }
 
-               
+             
                 var channels = new List<GuildedChannel>();
                 foreach (var channel in fullChannelData.Channels)
                 {
+                    var sanitizedName = SanitizeUnicodeName(channel.Name);
+                    var sanitizedDescription = SanitizeUnicodeName(channel.Description ?? "");
+                    
                     var guildedChannel = new GuildedChannel
                     {
                         Id = channel.Id,
-                        Name = channel.Name,
+                        Name = sanitizedName,
                         Type = channel.ContentType ?? "chat", 
-                        Topic = channel.Description ?? "",
+                        Topic = sanitizedDescription,
                         ParentId = channel.ChannelCategoryId?.ToString(),
                         ChannelCategoryId = channel.ChannelCategoryId?.ToString()
                     };
@@ -103,16 +108,21 @@ namespace GuildedDiscordMigrator
 
                 progress?.Report($"Found {categories.Count} categories and {channels.Count} channels");
 
-         
                 progress?.Report("Fetching roles...");
                 var roles = ExtractRolesFromServerInfo(serverInfo);
+                
+                foreach (var role in roles)
+                {
+                    role.Name = SanitizeUnicodeName(role.Name);
+                }
+                
                 progress?.Report($"Found {roles?.Count ?? 0} roles");
 
                 progress?.Report($"✅ Extracted: {categories.Count} categories, {channels.Count} channels, {roles?.Count ?? 0} roles");
 
                 ServerData = new ServerData
                 {
-                    ServerName = serverInfo.Team.Name,
+                    ServerName = SanitizeUnicodeName(serverInfo.Team.Name),
                     Categories = categories,
                     Channels = channels,
                     Roles = roles ?? new List<GuildedRole>()
@@ -123,8 +133,46 @@ namespace GuildedDiscordMigrator
             catch (Exception ex)
             {
                 progress?.Report($"❌ Extraction error: {ex.Message}");
-                MessageBox.Show($"Extraction failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Extraction failed: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return null;
+            }
+        }
+
+        private string SanitizeUnicodeName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return "unnamed";
+
+            try
+            {
+               
+                var normalized = name.Normalize(NormalizationForm.FormC);
+                
+                
+                var sanitized = new string(normalized
+                    .Where(c => !char.IsControl(c) || c == '\n' || c == '\r' || c == '\t')
+                    .ToArray());
+
+                if (string.IsNullOrWhiteSpace(sanitized))
+                    return "unnamed";
+
+                return sanitized.Trim();
+            }
+            catch (Exception)
+            {
+               
+                try
+                {
+                    var basicSanitized = new string(name
+                        .Where(c => char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsSymbol(c) || char.IsWhiteSpace(c))
+                        .ToArray());
+
+                    return string.IsNullOrWhiteSpace(basicSanitized) ? "unnamed" : basicSanitized.Trim();
+                }
+                catch (Exception)
+                {
+                    return "unnamed";
+                }
             }
         }
 
@@ -140,8 +188,9 @@ namespace GuildedDiscordMigrator
                 }
                 return null;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show($"Error getting user info: {ex.Message}", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return null;
             }
         }
@@ -150,7 +199,6 @@ namespace GuildedDiscordMigrator
         {
             try
             {
-                
                 var response = await _httpClient.GetAsync($"https://www.guilded.gg/api/teams/{serverId}/info");
                 
                 if (response.IsSuccessStatusCode)
@@ -160,13 +208,14 @@ namespace GuildedDiscordMigrator
                 }
                 else
                 {
-                 
                     var response2 = await _httpClient.GetAsync($"https://www.guilded.gg/api/teams/{serverId}");
                     if (response2.IsSuccessStatusCode)
                     {
                         var json = await response2.Content.ReadAsStringAsync();
                         return JsonConvert.DeserializeObject<GuildedServerInfoWithRoles>(json);
                     }
+                    
+                    MessageBox.Show($"Failed to fetch server info. Status: {response.StatusCode}", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return null;
                 }
             }
@@ -185,7 +234,6 @@ namespace GuildedDiscordMigrator
             {
                 foreach (var roleEntry in serverInfo.Team.RolesById)
                 {
-                    
                     if (roleEntry.Key == "baseRole") continue;
                     
                     var role = roleEntry.Value;
@@ -205,23 +253,33 @@ namespace GuildedDiscordMigrator
         {
             try
             {
-     
                 var response = await _httpClient.GetAsync($"https://www.guilded.gg/api/teams/{serverId}/channels?excludeBadgedContent=true");
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<FullChannelData>(json);
+                    
+                    var settings = new JsonSerializerSettings
+                    {
+                        NullValueHandling = NullValueHandling.Ignore,
+                        MissingMemberHandling = MissingMemberHandling.Ignore
+                    };
+                    
+                    return JsonConvert.DeserializeObject<FullChannelData>(json, settings);
                 }
-                return null;
+                else
+                {
+                    MessageBox.Show($"Failed to fetch channel data. Status: {response.StatusCode}", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return null;
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show($"Error fetching channel data: {ex.Message}", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return null;
             }
         }
     }
 
-    
     public class GuildedServerInfoWithRoles
     {
         [JsonProperty("team")] public GuildedTeam Team { get; set; } = new();
@@ -244,7 +302,6 @@ namespace GuildedDiscordMigrator
         [JsonProperty("isBase")] public bool IsBase { get; set; }
     }
 
-   
     public class FullChannelData
     {
         [JsonProperty("channels")] public List<ChannelData> Channels { get; set; } = new();
@@ -266,7 +323,7 @@ namespace GuildedDiscordMigrator
     {
         [JsonProperty("id")] public int Id { get; set; }
         [JsonProperty("name")] public string Name { get; set; } = "";
-        [JsonProperty("priority")] public int Priority { get; set; }
+        [JsonProperty("priority")] public int? Priority { get; set; } 
     }
 
     public class ServerData

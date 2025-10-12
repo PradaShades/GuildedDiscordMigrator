@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -33,7 +32,6 @@ namespace GuildedDiscordMigrator
 
             _commands = new CommandService();
             
-          
             _services = new ServiceCollection()
                 .AddSingleton(this)
                 .BuildServiceProvider();
@@ -50,7 +48,6 @@ namespace GuildedDiscordMigrator
                 return Task.CompletedTask;
             };
 
-            
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             _client.MessageReceived += HandleCommandAsync;
@@ -102,7 +99,6 @@ namespace GuildedDiscordMigrator
                 {
                     var guild = Context.Guild;
 
-               
                     var rolesEmbed = new EmbedBuilder()
                         .WithTitle("Creating Roles")
                         .WithDescription("Creating roles from Guilded server...")
@@ -119,7 +115,6 @@ namespace GuildedDiscordMigrator
                     {
                         try
                         {
-                
                             var existingRole = guild.Roles.FirstOrDefault(r => r.Name == guildedRole.Name);
                             if (existingRole != null)
                             {
@@ -128,10 +123,9 @@ namespace GuildedDiscordMigrator
                                 continue;
                             }
 
-                        
                             var color = ParseGuildedColor(guildedRole.Color);
                             
-                            var role = await guild.CreateRoleAsync(guildedRole.Name, 
+                            var role = await guild.CreateRoleAsync(PrepareNameForDiscord(guildedRole.Name), 
                                 permissions: GuildPermissions.None, 
                                 color: color, 
                                 isHoisted: false, 
@@ -139,7 +133,7 @@ namespace GuildedDiscordMigrator
                             
                             roleMap[guildedRole.Id] = role;
                             rolesCreated++;
-                            await Task.Delay(500); 
+                            await Task.Delay(500);
                         }
                         catch (Exception ex)
                         {
@@ -154,7 +148,6 @@ namespace GuildedDiscordMigrator
                         }
                     }
 
-                 
                     var categoriesEmbed = new EmbedBuilder()
                         .WithTitle("Creating Categories")
                         .WithDescription("Creating channel categories...")
@@ -171,7 +164,6 @@ namespace GuildedDiscordMigrator
                     {
                         try
                         {
-                           
                             var existingCategory = guild.CategoryChannels.FirstOrDefault(c => c.Name == category.Name);
                             if (existingCategory != null)
                             {
@@ -180,7 +172,7 @@ namespace GuildedDiscordMigrator
                                 continue;
                             }
 
-                            var discordCategory = await guild.CreateCategoryChannelAsync(category.Name);
+                            var discordCategory = await guild.CreateCategoryChannelAsync(PrepareNameForDiscord(category.Name));
                             categoryMap[category.Id] = discordCategory;
                             categoriesCreated++;
                             await Task.Delay(500);
@@ -198,7 +190,6 @@ namespace GuildedDiscordMigrator
                         }
                     }
 
-                
                     var channelsEmbed = new EmbedBuilder()
                         .WithTitle("Creating Channels")
                         .WithDescription("Creating text and voice channels...")
@@ -216,7 +207,6 @@ namespace GuildedDiscordMigrator
                     {
                         try
                         {
-                          
                             var existingChannel = guild.Channels.FirstOrDefault(c => c.Name == channel.Name);
                             if (existingChannel != null)
                             {
@@ -234,7 +224,7 @@ namespace GuildedDiscordMigrator
                             {
                                 case "chat":
                                 case "text":
-                                    await guild.CreateTextChannelAsync(channel.Name, props =>
+                                    await guild.CreateTextChannelAsync(PrepareNameForDiscord(channel.Name), props =>
                                     {
                                         props.CategoryId = parentCategory?.Id;
                                         props.Topic = channel.Topic;
@@ -244,8 +234,8 @@ namespace GuildedDiscordMigrator
                                     break;
 
                                 case "voice":
-                                case "stream": 
-                                    await guild.CreateVoiceChannelAsync(channel.Name, props =>
+                                case "stream":
+                                    await guild.CreateVoiceChannelAsync(PrepareNameForDiscord(channel.Name), props =>
                                     {
                                         props.CategoryId = parentCategory?.Id;
                                     });
@@ -254,8 +244,7 @@ namespace GuildedDiscordMigrator
                                     break;
 
                                 default:
-                                    
-                                    await guild.CreateTextChannelAsync(channel.Name, props =>
+                                    await guild.CreateTextChannelAsync(PrepareNameForDiscord(channel.Name), props =>
                                     {
                                         props.CategoryId = parentCategory?.Id;
                                         props.Topic = $"[{channel.Type}] {channel.Topic}";
@@ -280,11 +269,10 @@ namespace GuildedDiscordMigrator
                         }
                     }
 
-                   
                     var successEmbed = new EmbedBuilder()
                         .WithTitle("Migration Completed!")
                         .WithDescription($"Successfully migrated **{_bot._serverData.ServerName}** from Guilded to Discord!")
-                        .WithColor(new Discord.Color(67, 181, 129)) 
+                        .WithColor(new Discord.Color(67, 181, 129))
                         .WithThumbnailUrl("https://cdn.discordapp.com/emojis/1108455710372233246.png")
                         .AddField("Migration Summary", $"**Roles:** {rolesCreated} created, {rolesSkipped} existing\n**Categories:** {categoriesCreated} created, {categoriesSkipped} existing\n**Channels:** {channelsCreated} created ({textChannels} text, {voiceChannels} voice), {channelsSkipped} existing", false)
                         .AddField("Next Steps", "• Review the created structure\n• Adjust permissions as needed\n• Invite your community members", false)
@@ -293,7 +281,6 @@ namespace GuildedDiscordMigrator
                         .Build();
 
                     await Context.Message.ReplyAsync(embed: successEmbed);
-
                 }
                 catch (Exception ex)
                 {
@@ -316,7 +303,7 @@ namespace GuildedDiscordMigrator
                 var embed = new EmbedBuilder()
                     .WithTitle("Migration Status")
                     .WithDescription($"Ready to migrate: **{_bot._serverData.ServerName}**")
-                    .WithColor(new Discord.Color(201, 205, 218)) 
+                    .WithColor(new Discord.Color(201, 205, 218))
                     .WithThumbnailUrl("https://cdn.discordapp.com/emojis/1108455710372233246.png")
                     .AddField("Categories", _bot._serverData.Categories.Count, true)
                     .AddField("Channels", _bot._serverData.Channels.Count, true)
@@ -348,6 +335,21 @@ namespace GuildedDiscordMigrator
                 await Context.Message.ReplyAsync(embed: embed);
             }
 
+            private string PrepareNameForDiscord(string name)
+            {
+                if (string.IsNullOrEmpty(name))
+                    return "unnamed";
+                
+                
+                var normalized = name.Normalize(System.Text.NormalizationForm.FormC);
+                
+                
+                if (normalized.Length > 100)
+                    normalized = normalized.Substring(0, 100);
+                
+                return normalized.Trim();
+            }
+
             private Discord.Color ParseGuildedColor(string guildedColor)
             {
                 if (string.IsNullOrEmpty(guildedColor) || guildedColor.ToLower() == "transparent")
@@ -355,7 +357,6 @@ namespace GuildedDiscordMigrator
 
                 try
                 {
-                  
                     var cleanColor = guildedColor.Replace("#", "");
                     
                     if (cleanColor.Length == 6)
@@ -368,7 +369,6 @@ namespace GuildedDiscordMigrator
                     }
                     else if (cleanColor.Length == 3)
                     {
-                   
                         var r = Convert.ToByte(cleanColor.Substring(0, 1) + cleanColor.Substring(0, 1), 16);
                         var g = Convert.ToByte(cleanColor.Substring(1, 1) + cleanColor.Substring(1, 1), 16);
                         var b = Convert.ToByte(cleanColor.Substring(2, 1) + cleanColor.Substring(2, 1), 16);
@@ -385,7 +385,6 @@ namespace GuildedDiscordMigrator
             }
         }
     }
-
 
     public class ServiceCollection
     {

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GuildedDiscordMigrator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e9a46a86283951d32d924b8a0795bb6e21a235e3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a7daf275f7c6b8e5ab7cdfa7cdcb61ddf86c5300")]
 [assembly: System.Reflection.AssemblyProductAttribute("GuildedDiscordMigrator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GuildedDiscordMigrator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
